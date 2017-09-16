@@ -27,6 +27,12 @@ exportlog id file   Export logfile from specified bot to file
 
 Pre-requisites:
 ===
+debian 8.8 x64 (tested), other linux/mac variants should be fine.
+
+Windows is not supported, but windows users may be able to use this to just build configs.
+
+php5
+
 pm2 process manager
 
 valid gunbot config.js
