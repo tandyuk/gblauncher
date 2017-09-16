@@ -4,6 +4,21 @@ GUNBOT LAUNCHER
 Gunbot launcher is used to deploy and maintain many individual gunbots.
 
 
+NOTES
+=====
+exportlogs function is not written yet - use pm2 log [id] for now
+
+no limiting to specific id code is in yet - all operations currently affect ALL bots
+
+There is no current checking/stopping/deleting of bots if you remove the pair from your config. - use pm2 delete id and delete the bot folder.
+
+pm2 list  to get numeric ids of bots
+
+bot folder name will be eg:
+  gunbot_launcher/b_BTC-USD_bb          -     BTC-USD on bittrex using bb strategy
+  gunbot_launcher/p_BTC_BCH_stepgain    -     BTC-BCH on poloniex using stepgain
+
+
 
 Usage instructions:
 ===
