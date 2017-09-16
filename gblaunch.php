@@ -22,7 +22,7 @@ CONFIG:
 */
 $debug=false;
 
-$gbver = "5_0_2"; //version only - do not rename source .zip
+$gbver = "5_0_4"; //version only - do not rename source .zip
 
 //todo:
 $gb_md5sum = ""; //
@@ -39,27 +39,47 @@ $start_delay = 4;  //delay between starting bots in seconds
 
 
 
-
 //dont change after here
-
+$writeconfig = $writepm2 = $unzipgb = $createdirs = $createpm2 = $startbots = $stopbots = false;
 $arg = (isset($argv[1]) && (NULL!==$argv[1])?$argv[1]:'help');
 
 switch($arg){
 	case "build":
+		$createdirs = true;
+		$unzipgb = true;
+		$writeconfig = true;
+		$writepm2 = true;
+		$startbots = true;
+	break;
+	case "start":
+		$startbots = true;
+	break;
+	case "stop":
+		$stopbots = true;
+	break;
+	case "restart":
+		$startbots = true;
+	break;
+	case "reload":
+		$writeconfig = true;
+	break;
+	case "update":
+		$unzipgb2 = true;
+		$writeconfig = true;
+		$startbots = true;
+	break;
+	case "exportlog":
 
 
 	break;
-
-
-	case "help":
-	case "--help":
-	case "-help":
-	case "-h":
-	case "-?":
-	case "/?":
 	default:
-		echo "Usage instructions:".PHP_EOL.PHP_EOL."build               build bots dirs".PHP_EOL;
-
+		echo "Usage instructions:".PHP_EOL.PHP_EOL."build [id]          build bots".PHP_EOL;
+		echo "start [id]          Start bot, optional id or all according to start_delay".PHP_EOL;
+		echo "stop [id]           Stop bot, optional id or all, according to stop_delay".PHP_EOL;
+		echo "restart [id]        Restart bot(s)".PHP_EOL;
+		echo "reload [id]         Rebuild config in-place [for bot(s)]".PHP_EOL;
+		echo "update              Extract new Gunbot, rebuild configs and restart all bots".PHP_EOL;
+		echo "exportlog id file   Export logfile from specified bot to file".PHP_EOL;
 		die();
 	break;
 }
@@ -79,6 +99,10 @@ $globalsettings['optionals'] = $config['optionals'];
 $strategies = $config['strategies'];
 $pairs = $config['pairs'];
 
+//sort and filter pairs
+
+
+
 //var_dump($pairs);
 
 //start looping over the pairs
@@ -88,17 +112,23 @@ $e = strtolower(substr($exchange,0,1));
 	$n = $e.'_'.$pair.'_'.$opts['strategy'];
 	$p = $basedir.'/gunbot_launcher/'.$n.'/';
 		//make folder structure
+if($createdirs){
 if($debug)		echo "mkdir: " .$p.'/tulind/lib/binding/Release/node-v57-linux-x64/'.PHP_EOL;
 @		mkdir($p.'tulind/lib/binding/Release/node-v57-linux-x64/',0777,true);
+}
 		//extract gunbot files
+if($unzipgb){
 if($debug)		echo "exec: " .'unzip -j '.$basedir.'/GUNBOT_V'.$gbver.'.zip GUNBOT_V'.$gbver.'/tulind/lib/binding/Release/node-v57-linux-x64/tulind.node -d '.$p.'tulind/lib/binding/Release/node-v57-linux-x64'.PHP_EOL;
 		exec('unzip -o -qq -j '.$basedir.'/GUNBOT_V'.$gbver.'.zip GUNBOT_V'.$gbver.'/tulind/lib/binding/Release/node-v57-linux-x64/tulind.node -d '.$p.'tulind/lib/binding/Release/node-v57-linux-x64');
 if($debug)		echo "exec: " .'unzip -j '.$basedir.'/GUNBOT_V'.$gbver.'.zip GUNBOT_V'.$gbver.'/gunthy-linx64 -d '.$p.PHP_EOL;
 		exec('unzip -o -qq -j '.$basedir.'/GUNBOT_V'.$gbver.'.zip GUNBOT_V'.$gbver.'/gunthy-linx64 -d '.$p);
-sleep(2);
+//sleep(2);
 if($debug)		echo "chmod +x :" .$p.'gunthy-linx64'.PHP_EOL;
 		exec('chmod +x '.$p.'gunthy-linx64');
+}
+
 //create config
+if($writeconfig){
 $config = $globalsettings;
 $config['pairs']=array($exchange=>array($pair=>$opts));
 $config['ws']['port'] = $base_ws_port++;
@@ -106,8 +136,10 @@ $config['strategies'][$opts['strategy']] = $strategies[$opts['strategy']];
 
 //write config
 file_put_contents($p.'config.js',json_encode($config, JSON_PRETTY_PRINT | JSON_FORCE_OBJECT));
+}
 
 
+if($writepm2){
 //write pm2 process file
 $f = 'module.exports = {
   apps : [{
@@ -120,24 +152,24 @@ $f = 'module.exports = {
 }';
 
 file_put_contents($p.$n.'.config.js',$f);
+}
 
+if($startbots){
 //launch bot
-if($debug) echo "exec: ". 'pm2 start '.$p.$n.'.config.js';
+if($debug) echo "exec: ". 'pm2 restart '.$p.$n.'.config.js';
 exec('pm2 start '.$p.$n.'.config.js');
-sleep(1);
-echo exec('pm2 show '.$n) . PHP_EOL.PHP_EOL;
 sleep($start_delay);
+}
 
-	}
+if($stopbots){
+//launch bot
+if($debug) echo "exec: ". 'pm2 stop '.$p.$n.'.config.js';
+exec('pm2 stop '.$p.$n.'.config.js');
+sleep($start_delay);
 }
 
 
-
-//mkdir -p GUNBOT_V5_0_0/b_BTC-ARK-stepgain/tulind/lib/binding/Release/node-v57-linux-x64/
-//unzip -j GUNBOT_V5_0_0.zip GUNBOT_V5_0_2/tulind/lib/binding/Release/node-v57-linux-x64/tulind.node -d GUNBOT_V5_0_0/b_BTC-ARK-stepgain/tulind/lib/binding/Release/node-v57-linux-x64
-//unzip -j GUNBOT_V5_0_0.zip GUNBOT_V5_0_2/gunthy-linx64   -d GUNBOT_V5_0_0/b_BTC-ARK-stepgain/
-//chmod +x GUNBOT_V5_0_0/b_BTC-ARK-stepgain/gunthy-linx64
-
-
+	}
+}
 
 ?>
