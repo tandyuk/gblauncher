@@ -120,8 +120,8 @@ config.js is now parsed and stripped of comments before processing.
 This means you can now use /*   */  and // style comment blocks in your main config.js
 
 
-
-
+Thanks
+===
 If you like my work, consider buying me a beer :)
 
 BTC: 3A3MHPnHW1A98wBbdNC2JZ19MrVa4dmPdU
