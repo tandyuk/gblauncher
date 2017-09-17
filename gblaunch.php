@@ -30,7 +30,7 @@ $gb_md5sum = ""; //
 
 $base_ws_port = 5001; //starting port to use for websockets
 
-$start_delay = 4;  //delay between starting bots in seconds
+$start_delay = 2;  //delay between starting bots in seconds
 
 
 
@@ -40,7 +40,7 @@ $start_delay = 4;  //delay between starting bots in seconds
 
 
 //dont change after here
-$writeconfig = $writepm2 = $unzipgb = $createdirs = $createpm2 = $startbots = $stopbots = false;
+$writeconfig = $writepm2 = $unzipgb = $createdirs = $createpm2 = $startbots = $stopbots = $delete = false;
 $arg = (isset($argv[1]) && (NULL!==$argv[1])?$argv[1]:'help');
 
 switch($arg){
@@ -68,6 +68,11 @@ switch($arg){
 		$writeconfig = true;
 		$startbots = true;
 	break;
+	case "clean":
+		$delete = true;
+		$stopbots = true;
+
+	break;
 	case "exportlog":
 
 
@@ -92,10 +97,10 @@ $config = json_decode(file_get_contents($basedir.'/config.js'),true);
 $globalsettings = array();
 $globalsettings['exchanges'] = $config['exchanges'];
 $globalsettings['bot'] = $config['bot'];
-//$globalsettings['ws'] = $config['ws'];  we need to override this
 $globalsettings['imap_listener'] = $config['imap_listener'];
 $globalsettings['optionals'] = $config['optionals'];
 
+$overrides = $config['overrides'];
 $strategies = $config['strategies'];
 $pairs = $config['pairs'];
 
@@ -109,38 +114,75 @@ $pairs = $config['pairs'];
 foreach($pairs as $exchange=>$pa){
 $e = strtolower(substr($exchange,0,1));
 	foreach($pa as $pair=>$opts){
-	$n = $e.'_'.$pair.'_'.$opts['strategy'];
-	$p = $basedir.'/gunbot_launcher/'.$n.'/';
+		$n = $e.'_'.$pair.'_'.$opts['strategy'];
+echo "Processing ".$n.PHP_EOL;
+		$p = $basedir.'/gunbot_launcher/'.$n.'/';
 		//make folder structure
-if($createdirs){
-if($debug)		echo "mkdir: " .$p.'/tulind/lib/binding/Release/node-v57-linux-x64/'.PHP_EOL;
-@		mkdir($p.'tulind/lib/binding/Release/node-v57-linux-x64/',0777,true);
-}
+		if($createdirs){
+			if($debug)		echo "mkdir: " .$p.'/tulind/lib/binding/Release/node-v57-linux-x64/'.PHP_EOL;
+			@		mkdir($p.'tulind/lib/binding/Release/node-v57-linux-x64/',0777,true);
+		}
 		//extract gunbot files
-if($unzipgb){
-if($debug)		echo "exec: " .'unzip -j '.$basedir.'/GUNBOT_V'.$gbver.'.zip GUNBOT_V'.$gbver.'/tulind/lib/binding/Release/node-v57-linux-x64/tulind.node -d '.$p.'tulind/lib/binding/Release/node-v57-linux-x64'.PHP_EOL;
-		exec('unzip -o -qq -j '.$basedir.'/GUNBOT_V'.$gbver.'.zip GUNBOT_V'.$gbver.'/tulind/lib/binding/Release/node-v57-linux-x64/tulind.node -d '.$p.'tulind/lib/binding/Release/node-v57-linux-x64');
-if($debug)		echo "exec: " .'unzip -j '.$basedir.'/GUNBOT_V'.$gbver.'.zip GUNBOT_V'.$gbver.'/gunthy-linx64 -d '.$p.PHP_EOL;
-		exec('unzip -o -qq -j '.$basedir.'/GUNBOT_V'.$gbver.'.zip GUNBOT_V'.$gbver.'/gunthy-linx64 -d '.$p);
-//sleep(2);
-if($debug)		echo "chmod +x :" .$p.'gunthy-linx64'.PHP_EOL;
-		exec('chmod +x '.$p.'gunthy-linx64');
-}
+		if($unzipgb){
+			if($debug)		echo "exec: " .'unzip -j '.$basedir.'/GUNBOT_V'.$gbver.'.zip GUNBOT_V'.$gbver.'/tulind/lib/binding/Release/node-v57-linux-x64/tulind.node -d '.$p.'tulind/lib/binding/Release/node-v57-linux-x64'.PHP_EOL;
+			exec('unzip -o -qq -j '.$basedir.'/GUNBOT_V'.$gbver.'.zip GUNBOT_V'.$gbver.'/tulind/lib/binding/Release/node-v57-linux-x64/tulind.node -d '.$p.'tulind/lib/binding/Release/node-v57-linux-x64');
+			if($debug)		echo "exec: " .'unzip -j '.$basedir.'/GUNBOT_V'.$gbver.'.zip GUNBOT_V'.$gbver.'/gunthy-linx64 -d '.$p.PHP_EOL;
+			exec('unzip -o -qq -j '.$basedir.'/GUNBOT_V'.$gbver.'.zip GUNBOT_V'.$gbver.'/gunthy-linx64 -d '.$p);
+			//sleep(2);
+			if($debug)		echo "chmod +x :" .$p.'gunthy-linx64'.PHP_EOL;
+			exec('chmod +x '.$p.'gunthy-linx64');
+		}
 
-//create config
-if($writeconfig){
-$config = $globalsettings;
-$config['pairs']=array($exchange=>array($pair=>$opts));
-$config['ws']['port'] = $base_ws_port++;
-$config['strategies'][$opts['strategy']] = $strategies[$opts['strategy']];
+		//create config
+		if($writeconfig){
+			$config = $globalsettings;
+			if(array_key_exists('override',$opts) && array_key_exists('CUSTOM',$opts['override'])){
+				//custom overrides method
+				if(!array_key_exists($opts['override']['CUSTOM'],$overrides)){
+					echo "ERROR: $n trying to use non-existant custom overrides. BAILING OUT.".PHP_EOL;
+					continue;
+				}
+				$c = $overrides[$opts['override']['CUSTOM']]['REQUIRES'];
+				if($c !== $opts['strategy']){
+					echo "ERROR: $n trying to use " . $c . " custom overrides on ". $opts['strategy']." BAILING OUT.".PHP_EOL;
+					continue;
+				}
+				$config['pairs']=array($exchange=>array($pair=>$opts));
+				foreach($overrides[$opts['override']['CUSTOM']] as $key=>$val){
+					if($key == "REQUIRES")continue;
+					$config['pairs'][$exchange][$pair]['override'][$key] = $val;
+				}
+				unset($config['pairs'][$exchange][$pair]['override']['CUSTOM']);
+				$config['strategies'][$opts['strategy']] = $strategies[$opts['strategy']];
+			}
+			elseif(array_key_exists($opts['strategy'],$strategies) && array_key_exists('REQUIRES',$strategies[$opts['strategy']])){
+				//custom strategy method
+				$config['pairs']=array($exchange=>array($pair=>$opts));
+				$s = array();
+				foreach($strategies[$opts['strategy']] as $key=>$val){
+					if($key == 'REQUIRES'){
+						$t = $val;
+						$config['pairs'][$exchange][$pair]['strategy']=$t;
+					}else{
+						$s[$key]=$val;
+					}
+				}
+				$config['strategies'][$t] = $s;
+			}
+			else{
+				$config['pairs']=array($exchange=>array($pair=>$opts));
+				$config['strategies'][$opts['strategy']] = $strategies[$opts['strategy']];
+			}
+			$config['ws']['port'] = $base_ws_port++;
 
-//write config
-file_put_contents($p.'config.js',json_encode($config, JSON_PRETTY_PRINT | JSON_FORCE_OBJECT));
-}
 
+			//write config
+			file_put_contents($p.'config.js',json_encode($config, JSON_PRETTY_PRINT | JSON_FORCE_OBJECT));
+			if(!$startbots)sleep($start_delay);
+		}
 
-if($writepm2){
-//write pm2 process file
+		if($writepm2){
+			//write pm2 process file
 $f = 'module.exports = {
   apps : [{
     name   : "'.$n.'",
@@ -151,25 +193,33 @@ $f = 'module.exports = {
   }]
 }';
 
-file_put_contents($p.$n.'.config.js',$f);
-}
+			file_put_contents($p.$n.'.config.js',$f);
+		}
 
-if($startbots){
-//launch bot
-if($debug) echo "exec: ". 'pm2 restart '.$p.$n.'.config.js';
-exec('pm2 start '.$p.$n.'.config.js');
-sleep($start_delay);
-}
+		if($startbots){
+			//launch bot
+			if($debug) echo "exec: ". 'pm2 restart '.$p.$n.'.config.js';
+			exec('pm2 start '.$p.$n.'.config.js');
+			sleep($start_delay);
+		}
 
-if($stopbots){
-//launch bot
-if($debug) echo "exec: ". 'pm2 stop '.$p.$n.'.config.js';
-exec('pm2 stop '.$p.$n.'.config.js');
-sleep($start_delay);
-}
+		if($stopbots){
+			//launch bot
+			if($debug) echo "exec: ". 'pm2 stop '.$n;
+			exec('pm2 stop '.$n);
+			if(!$delete)sleep($start_delay);
+		}
 
-
+		if($delete){
+			exec('pm2 delete '.$n);
+			exec('rm -rf '.$p);
+		}
 	}
+}
+
+
+if($delete){
+	exec('rm -rf '.$basedir.'/gunbot_launcher/');
 }
 
 ?>

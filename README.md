@@ -99,3 +99,17 @@ Edit gblaunch.php $gbver value to "5_3_2"
 php gblaunch.php update
 
 Pair by pair, new gb is unzipped, config rebuilt, and bot restarted using pm2.
+
+
+Custom Config:
+===
+
+see example config.js
+
+you can either:
+
+define a list of override options in the overrides array, and call them using the first 2 examples
+
+define your own strategy name, and include a "REQUIRES":".." parameter to specify the real type
+
+
