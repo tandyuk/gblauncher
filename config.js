@@ -1,4 +1,5 @@
 {
+//This is a comment
 	"overrides": {
 		"james": {
 			"REQUIRES": "stepgain",
@@ -8,6 +9,8 @@
                         "BUYLVL3": 4,
                         "SELLLVL1": 0.9,
                         "SELLLVL2": 1.2,
+			/* reminder why we did this again.....
+Really been a while */
                         "SELLLVL3": 1.9,
                         "BUYLVL": 3,
                         "SELLLVL": 2,
@@ -284,6 +287,7 @@
 		}
 	},
 	"strategies": {
+//random placement of a comment for test purposes
 		"bb": {
 			"BTC_TRADING_LIMIT": 0.01,
 			"PERIOD": 15,

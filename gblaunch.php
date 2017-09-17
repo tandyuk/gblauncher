@@ -93,7 +93,7 @@ switch($arg){
 
 $basedir = dirname(__FILE__);
 
-$config = json_decode(file_get_contents($basedir.'/config.js'),true);
+$config = json_clean_decode(file_get_contents($basedir.'/config.js'),true);
 $globalsettings = array();
 $globalsettings['exchanges'] = $config['exchanges'];
 $globalsettings['bot'] = $config['bot'];
@@ -114,7 +114,7 @@ $pairs = $config['pairs'];
 foreach($pairs as $exchange=>$pa){
 $e = strtolower(substr($exchange,0,1));
 	foreach($pa as $pair=>$opts){
-		$n = $e.'_'.$pair.'_'.$opts['strategy'];
+		$n = $e.'_'.$pair.'_'.((array_key_exists($opts['strategy'],$strategies) && array_key_exists('REQUIRES',$strategies[$opts['strategy']]))?$strategies[$opts['strategy']]['REQUIRES']:$opts['strategy']);
 echo "Processing ".$n.PHP_EOL;
 		$p = $basedir.'/gunbot_launcher/'.$n.'/';
 		//make folder structure
@@ -221,5 +221,42 @@ $f = 'module.exports = {
 if($delete){
 	exec('rm -rf '.$basedir.'/gunbot_launcher/');
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Helper Functions
+
+function json_clean_decode($json, $assoc = false, $depth = 512, $options = 0) {
+    // search and remove comments like /* */ and //
+    $json = preg_replace("#(/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+/)|([\s\t]//.*)|(^//.*)#", '', $json);
+    if(version_compare(phpversion(), '5.4.0', '>=')) {
+        $json = json_decode($json, $assoc, $depth, $options);
+    }
+    elseif(version_compare(phpversion(), '5.3.0', '>=')) {
+        $json = json_decode($json, $assoc, $depth);
+    }
+    else {
+        $json = json_decode($json, $assoc);
+    }
+    return $json;
+}
+
+
 
 ?>

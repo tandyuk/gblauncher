@@ -113,3 +113,8 @@ define a list of override options in the overrides array, and call them using th
 define your own strategy name, and include a "REQUIRES":".." parameter to specify the real type
 
 
+Comments:
+===
+config.js is now parsed and stripped of comments before processing.
+
+This means you can now use /*   */  and // style comment blocks in your main config.js
