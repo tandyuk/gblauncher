@@ -2,11 +2,8 @@
 
 /*
 INSTRUCTIONS:
-
 Download Gunbot zip file to this working dirctory.
-
 Save Complete Gunbot config.js to this working dorectory.
-
 
 WHAT THIS SCRIPT DOES:
 (eg for GB 5.0.4 bittrex BTC-ARK and BTC-BCC)
@@ -17,26 +14,40 @@ Write minimal config.js for the specific pair.
 
 Launch pair with output logged
 
-
 CONFIG:
 */
 $debug=false;
-
 $gbver = "5_0_4"; //version only - do not rename source .zip
-
 //todo:
 $gb_md5sum = ""; //
-
-
 $base_ws_port = 5001; //starting port to use for websockets
-
 $start_delay = 2;  //delay between starting bots in seconds
 
+$basedir = dirname(__FILE__);
 
+//methods to get config file
+//original, config.js from directory we are run from
+$config = json_clean_decode(file_get_contents($basedir.'/config.js'),true);
 
-
-
-
+/*
+//example pull from accessible server via sftp using pubkey auth
+//NOTE: DO NOT ask me for help with this - google SSH public key authentication
+$session = ssh2_connect('192.168.66.220', 222);
+ssh2_auth_pubkey_file($session, 'james', '/root/.ssh/id_rsa.pub', '/root/.ssh/id_rsa');
+$session = ssh2_sftp($session);
+$file = file_get_contents('ssh2.sftp://'.$session.'/data/management/gunbot/config.js');
+$config = json_clean_decode($file,true);
+if(isset($argv[1]) && ($argv[1] == "su")){
+	//self update cos im lazy
+	file_put_contents($basedir.'/gblaunch.php',file_get_contents('ssh2.sftp://'.$session.'/data/management/gunbot/gblaunch.php'));
+	if(!file_exists($basedir.'/GUNBOT_V5_0_4.zip')){
+		file_put_contents($basedir.'/GUNBOT_V5_0_4.zip',file_get_contents('ssh2.sftp://'.$session.'/data/management/gunbot/GUNBOT_V5_0_4.zip'));
+	}
+	//update this while we're here
+	file_put_contents($basedir.'/profitcalc.php',file_get_contents('ssh2.sftp://'.$session.'/data/management/gunbot/profitcalc.php'));
+	die();
+}
+*/
 
 
 //dont change after here
@@ -68,6 +79,10 @@ switch($arg){
 		$writeconfig = true;
 		$startbots = true;
 	break;
+	case "autoupdate":
+
+
+	break;
 	case "clean":
 		$delete = true;
 		$stopbots = true;
@@ -91,9 +106,6 @@ switch($arg){
 
 
 
-$basedir = dirname(__FILE__);
-
-$config = json_clean_decode(file_get_contents($basedir.'/config.js'),true);
 $globalsettings = array();
 $globalsettings['exchanges'] = $config['exchanges'];
 $globalsettings['bot'] = $config['bot'];
@@ -102,20 +114,103 @@ $globalsettings['optionals'] = $config['optionals'];
 
 $overrides = $config['overrides'];
 $strategies = $config['strategies'];
-$pairs = $config['pairs'];
+//$config['pairs'];
 
 //sort and filter pairs
+//have we been given an id?
+$id = (isset($argv[2]) && (NULL!==$argv[2])?$argv[2]:NULL);
+if($id !== NULL){
+	//yes, now work out what it is
+	//options
+	//BTC-BTS  or another currency pair
+	//stepgain, customstepgain, and so on to match a particular strategy
 
+	//so first off, is it a normal pair name?
+	if(array_key_exists($id,$config['pairs']['bittrex'])){
+		//yes, so set it and update the single pair
+		$pairs = array("bittrex"=>array($id=>$config['pairs']['bittrex'][$id]));
+	}
+	elseif(array_key_exists(gethostname(),$config['servers']) && array_key_exists('pairs',$config['servers'][gethostname()]) && array_key_exists('bittrex',$config['servers'][gethostname()]['pairs']) && array_key_exists($id,$config['servers'][gethostname()]['pairs']['bittrex'])){
+		//now check if its a server specific pair, and that we're on the right server
+		$pairs = array("bittrex"=>array($id=>$config['servers'][gethostname()]['pairs']['bittrex'][$id]));
 
+	}
+	elseif(array_key_exists($id,$strategies)){
+		//or check if it is a trading strategy
+		global $mystrat;
+		$mystrat = $id;
+		$pairs = array_merge($config['pairs']['bittrex'],(array_key_exists(gethostname(),$config['servers']) && array_key_exists('pairs',$config['servers'][gethostname()])?$config['servers'][gethostname()]['pairs']['bittrex']:array()));
+		$pairs = array('bittrex'=>array_filter($pairs,function($v){global $mystrat; return $v['strategy'] == $mystrat;}));
+	}else{
+		//weve been given an id, but cant work out what it is
+	
+	
+	}
 
-//var_dump($pairs);
+}else{
+	//behave normally
+	$pairs = $config['pairs'];
+}
+
+if(!isset($pairs) || (count($pairs['bittrex'])==0)){
+	die('No pairs selected - if specifying a server specific pair - are you on the right server?'.PHP_EOL);
+}
+
+//spread pairs over servers
+if(array_key_exists('servers',$config)){
+	$iservers = count($config['servers']);
+	$serverpairs = array();
+	$serverlimits = array();
+	foreach($config['servers'] as $s=>$d){
+		if(array_key_exists('pairs',$d) && array_key_exists('bittrex',$d['pairs'])){
+			$serverpairs[$s] = $d['pairs']['bittrex'];
+		}else{
+			$serverpairs[$s] = array();
+		}
+	
+		if(array_key_exists('max_instances',$d) && array_key_exists('num_instances',$d)){
+			$serverlimits[$s] = ($d['max_instances']>$d['num_instances']?$d['max_instances']:$d['num_instances']);
+		}elseif(array_key_exists('max_instances',$d)){
+			$serverlimits[$s]=$d['max_instances'];
+		}elseif(array_key_exists('num_instances',$d)){
+			$serverlimits[$s]=$d['num_instances'];
+		}else{
+			$serverlimits[$s]=9999999;
+		}
+	}
+	if(array_key_exists('pairs',$config) && array_key_exists('bittrex',$config['pairs']) && (count($config['pairs']['bittrex'])>0)){
+		$totalpairs=count($config['pairs']['bittrex']);
+		$pair=0;
+		$error=0;
+		$pairkeys = array_keys($config['pairs']['bittrex']);
+		while($totalpairs>0){
+			foreach($config['servers'] as $s=>$d){
+				if($error>5){
+					die('ERROR: Were stuck in a loop splitting up pairs'.PHP_EOL);
+				}
+				if(count($serverpairs[$s])<$serverlimits[$s]){
+					$serverpairs[$s][$pairkeys[$pair]] = $config['pairs']['bittrex'][$pairkeys[$pair]];
+					$pair++;
+					$totalpairs--;
+					$error=0;
+				}else{
+					$error++;
+				}
+			}
+
+		}
+	}
+	
+	$pairs = array('bittrex'=>$serverpairs[gethostname()]);
+
+}
 
 //start looping over the pairs
 foreach($pairs as $exchange=>$pa){
-$e = strtolower(substr($exchange,0,1));
+	$e = strtolower(substr($exchange,0,1));
 	foreach($pa as $pair=>$opts){
 		$n = $e.'_'.$pair.'_'.((array_key_exists($opts['strategy'],$strategies) && array_key_exists('REQUIRES',$strategies[$opts['strategy']]))?$strategies[$opts['strategy']]['REQUIRES']:$opts['strategy']);
-echo "Processing ".$n.PHP_EOL;
+		echo "Processing ".$n.PHP_EOL;
 		$p = $basedir.'/gunbot_launcher/'.$n.'/';
 		//make folder structure
 		if($createdirs){
@@ -129,13 +224,23 @@ echo "Processing ".$n.PHP_EOL;
 			if($debug)		echo "exec: " .'unzip -j '.$basedir.'/GUNBOT_V'.$gbver.'.zip GUNBOT_V'.$gbver.'/gunthy-linx64 -d '.$p.PHP_EOL;
 			exec('unzip -o -qq -j '.$basedir.'/GUNBOT_V'.$gbver.'.zip GUNBOT_V'.$gbver.'/gunthy-linx64 -d '.$p);
 			//sleep(2);
+
+			//update to 505 beta?
+			if(array_key_exists('gb_ver',$config['servers'][gethostname()])){
+				//pull updated gunbot exe via sftp
+				//again if you need help with this, 505 is NOT for you!
+			//	file_put_contents($p.'/gunthy-linx64',file_get_contents('ssh2.sftp://'.$session.'/data/management/gunbot/gunthy-linx64'));
+			}
+
 			if($debug)		echo "chmod +x :" .$p.'gunthy-linx64'.PHP_EOL;
 			exec('chmod +x '.$p.'gunthy-linx64');
+			
+			
 		}
 
 		//create config
 		if($writeconfig){
-			$config = $globalsettings;
+			$myconfig = $globalsettings;
 			if(array_key_exists('override',$opts) && array_key_exists('CUSTOM',$opts['override'])){
 				//custom overrides method
 				if(!array_key_exists($opts['override']['CUSTOM'],$overrides)){
@@ -147,37 +252,45 @@ echo "Processing ".$n.PHP_EOL;
 					echo "ERROR: $n trying to use " . $c . " custom overrides on ". $opts['strategy']." BAILING OUT.".PHP_EOL;
 					continue;
 				}
-				$config['pairs']=array($exchange=>array($pair=>$opts));
+				$myconfig['pairs']=array($exchange=>array($pair=>$opts));
 				foreach($overrides[$opts['override']['CUSTOM']] as $key=>$val){
 					if($key == "REQUIRES")continue;
-					$config['pairs'][$exchange][$pair]['override'][$key] = $val;
+					$myconfig['pairs'][$exchange][$pair]['override'][$key] = $val;
 				}
-				unset($config['pairs'][$exchange][$pair]['override']['CUSTOM']);
-				$config['strategies'][$opts['strategy']] = $strategies[$opts['strategy']];
+				unset($myconfig['pairs'][$exchange][$pair]['override']['CUSTOM']);
+				$myconfig['strategies'][$opts['strategy']] = $strategies[$opts['strategy']];
 			}
 			elseif(array_key_exists($opts['strategy'],$strategies) && array_key_exists('REQUIRES',$strategies[$opts['strategy']])){
 				//custom strategy method
-				$config['pairs']=array($exchange=>array($pair=>$opts));
+				$myconfig['pairs']=array($exchange=>array($pair=>$opts));
 				$s = array();
 				foreach($strategies[$opts['strategy']] as $key=>$val){
-					if($key == 'REQUIRES'){
-						$t = $val;
-						$config['pairs'][$exchange][$pair]['strategy']=$t;
-					}else{
-						$s[$key]=$val;
+					switch($key){
+						case'REQUIRES':
+							$t = $val;
+							$myconfig['pairs'][$exchange][$pair]['strategy']=$t;
+						break;
+						case "BOT_DELAY":
+						case "period_storage_ticker":
+						case "interval_ticker_update":
+							$config['bot'][$key]=$val;
+						break;
+						default:
+							$s[$key]=$val;
+						break;
 					}
 				}
-				$config['strategies'][$t] = $s;
+				$myconfig['strategies'][$t] = $s;
 			}
 			else{
-				$config['pairs']=array($exchange=>array($pair=>$opts));
-				$config['strategies'][$opts['strategy']] = $strategies[$opts['strategy']];
+				$myconfig['pairs']=array($exchange=>array($pair=>$opts));
+				$myconfig['strategies'][$opts['strategy']] = $strategies[$opts['strategy']];
 			}
-			$config['ws']['port'] = $base_ws_port++;
+			$myconfig['ws']['port'] = $base_ws_port++;
 
 
 			//write config
-			file_put_contents($p.'config.js',json_encode($config, JSON_PRETTY_PRINT | JSON_FORCE_OBJECT));
+			file_put_contents($p.'config.js',json_encode($myconfig, JSON_PRETTY_PRINT | JSON_FORCE_OBJECT));
 			if(!$startbots)sleep($start_delay);
 		}
 
@@ -199,7 +312,7 @@ $f = 'module.exports = {
 		if($startbots){
 			//launch bot
 			if($debug) echo "exec: ". 'pm2 restart '.$p.$n.'.config.js';
-			exec('pm2 start '.$p.$n.'.config.js');
+			exec('pm2 start --no-autorestart '.$p.$n.'.config.js');
 			sleep($start_delay);
 		}
 
@@ -219,21 +332,9 @@ $f = 'module.exports = {
 
 
 if($delete){
+	exec('pm2 delete all');
 	exec('rm -rf '.$basedir.'/gunbot_launcher/');
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -256,7 +357,4 @@ function json_clean_decode($json, $assoc = false, $depth = 512, $options = 0) {
     }
     return $json;
 }
-
-
-
 ?>
