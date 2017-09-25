@@ -49,7 +49,6 @@ if(isset($argv[1]) && ($argv[1] == "su")){
 }
 */
 
-
 //dont change after here
 $writeconfig = $writepm2 = $unzipgb = $createdirs = $createpm2 = $startbots = $stopbots = $delete = false;
 $arg = (isset($argv[1]) && (NULL!==$argv[1])?$argv[1]:'help');
@@ -176,6 +175,26 @@ if(array_key_exists('servers',$config)){
 			$serverlimits[$s]=$d['num_instances'];
 		}else{
 			$serverlimits[$s]=9999999;
+		}
+		
+		if($s == gethostname()){
+			//my custom settings
+			if(array_key_exists('BOT_DELAY',$d)){
+				$globalsettings['bot']['BOT_DELAY'] = $d['BOT_DELAY'];
+			}
+			if(array_key_exists('period_storage_ticker',$d)){
+				$globalsettings['bot']['period_storage_ticker'] = $d['period_storage_ticker'];
+			}
+			if(array_key_exists('interval_ticker_update',$d)){
+				$globalsettings['bot']['interval_ticker_update'] = $d['interval_ticker_update'];
+			}
+			if(array_key_exists('exchanges',$d) && array_key_exists('bittrex',$d['exchanges'])){
+				if(array_key_exists('key',$d['exchanges']['bittrex']) && array_key_exists('secret',$d['exchanges']['bittrex'])){
+					$globalsettings['exchanges']['bittrex'] = $d['exchanges']['bittrex'];
+				}else{
+					die("Attempting to specify custom server api/secret for bittrex, but only one of key/secret was provided.".PHP_EOL);		
+				}
+			}
 		}
 	}
 	if(array_key_exists('pairs',$config) && array_key_exists('bittrex',$config['pairs']) && (count($config['pairs']['bittrex'])>0)){
@@ -337,12 +356,7 @@ if($delete){
 }
 
 
-
-
-
-
 // Helper Functions
-
 function json_clean_decode($json, $assoc = false, $depth = 512, $options = 0) {
     // search and remove comments like /* */ and //
     $json = preg_replace("#(/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+/)|([\s\t]//.*)|(^//.*)#", '', $json);
