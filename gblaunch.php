@@ -17,10 +17,11 @@ Launch pair with output logged
 CONFIG:
 */
 $debug=false;
-$gbver = "5_0_4"; //version only - do not rename source .zip
+$gbzip = "Gunbot.XT.Edition.-.Linux.package.zip"; //filename of the source .zip
 //todo:
 $gb_md5sum = ""; //
 $base_ws_port = 5001; //starting port to use for websockets
+$base_wc_port = 3001; //starting port to use for webgui
 $start_delay = 2;  //delay between starting bots in seconds
 
 $basedir = dirname(__FILE__);
@@ -29,19 +30,20 @@ $basedir = dirname(__FILE__);
 //original, config.js from directory we are run from
 $config = json_clean_decode(file_get_contents($basedir.'/config.js'),true);
 
-/*
-//example pull from accessible server via sftp using pubkey auth
-//NOTE: DO NOT ask me for help with this - google SSH public key authentication
-$session = ssh2_connect('192.168.66.220', 222);
+//pull from accessible server via sftp using pubkey auth
+/*$session = ssh2_connect('192.168.66.220', 222);
 ssh2_auth_pubkey_file($session, 'james', '/root/.ssh/id_rsa.pub', '/root/.ssh/id_rsa');
 $session = ssh2_sftp($session);
 $file = file_get_contents('ssh2.sftp://'.$session.'/data/management/gunbot/config.js');
 $config = json_clean_decode($file,true);
+*/
+/* Method to pull updates from a local filserver using above ssh keypair.
 if(isset($argv[1]) && ($argv[1] == "su")){
 	//self update cos im lazy
+	file_put_contents($basedir.'/config.js',$file);
 	file_put_contents($basedir.'/gblaunch.php',file_get_contents('ssh2.sftp://'.$session.'/data/management/gunbot/gblaunch.php'));
-	if(!file_exists($basedir.'/GUNBOT_V5_0_4.zip')){
-		file_put_contents($basedir.'/GUNBOT_V5_0_4.zip',file_get_contents('ssh2.sftp://'.$session.'/data/management/gunbot/GUNBOT_V5_0_4.zip'));
+	if(!file_exists($basedir.'/'.$gbzip)){
+		file_put_contents($basedir.'/'.$gbzip,file_get_contents('ssh2.sftp://'.$session.'/data/management/gunbot/'.$gbzip));
 	}
 	//update this while we're here
 	file_put_contents($basedir.'/profitcalc.php',file_get_contents('ssh2.sftp://'.$session.'/data/management/gunbot/profitcalc.php'));
@@ -178,6 +180,7 @@ if(array_key_exists('servers',$config)){
 		}
 		
 		if($s == gethostname()){
+			$globalsetting['ws']['hostname'] = $d['hostname'];
 			//my custom settings
 			if(array_key_exists('BOT_DELAY',$d)){
 				$globalsettings['bot']['BOT_DELAY'] = $d['BOT_DELAY'];
@@ -204,7 +207,7 @@ if(array_key_exists('servers',$config)){
 		$pairkeys = array_keys($config['pairs']['bittrex']);
 		while($totalpairs>0){
 			foreach($config['servers'] as $s=>$d){
-				if($error>5){
+				if($error>50){
 					die('ERROR: Were stuck in a loop splitting up pairs'.PHP_EOL);
 				}
 				if(count($serverpairs[$s])<$serverlimits[$s]){
@@ -235,21 +238,26 @@ foreach($pairs as $exchange=>$pa){
 		if($createdirs){
 			if($debug)		echo "mkdir: " .$p.'/tulind/lib/binding/Release/node-v57-linux-x64/'.PHP_EOL;
 			@		mkdir($p.'tulind/lib/binding/Release/node-v57-linux-x64/',0777,true);
+			if($debug)		echo "mkdir: " .$p.'/node_modules/sqlite3/lib/binding/node-v57-linux-x64/'.PHP_EOL;
+			@		mkdir($p.'/node_modules/sqlite3/lib/binding/node-v57-linux-x64/',0777,true);
+			
+			
 		}
 		//extract gunbot files
 		if($unzipgb){
-			if($debug)		echo "exec: " .'unzip -j '.$basedir.'/GUNBOT_V'.$gbver.'.zip GUNBOT_V'.$gbver.'/tulind/lib/binding/Release/node-v57-linux-x64/tulind.node -d '.$p.'tulind/lib/binding/Release/node-v57-linux-x64'.PHP_EOL;
-			exec('unzip -o -qq -j '.$basedir.'/GUNBOT_V'.$gbver.'.zip GUNBOT_V'.$gbver.'/tulind/lib/binding/Release/node-v57-linux-x64/tulind.node -d '.$p.'tulind/lib/binding/Release/node-v57-linux-x64');
-			if($debug)		echo "exec: " .'unzip -j '.$basedir.'/GUNBOT_V'.$gbver.'.zip GUNBOT_V'.$gbver.'/gunthy-linx64 -d '.$p.PHP_EOL;
-			exec('unzip -o -qq -j '.$basedir.'/GUNBOT_V'.$gbver.'.zip GUNBOT_V'.$gbver.'/gunthy-linx64 -d '.$p);
+			if($debug)		echo "exec: " .'unzip -j '.$basedir.'/'.$gbzip.' "Gunbot XT Edition - Linux package/tulind/lib/binding/Release/node-v57-linux-x64/tulind.node" -d '.$p.'tulind/lib/binding/Release/node-v57-linux-x64'.PHP_EOL;
+			exec('unzip -o -qq -j '.$basedir.'/'.$gbzip.' "Gunbot XT Edition - Linux package/tulind/lib/binding/Release/node-v57-linux-x64/tulind.node" -d '.$p.'tulind/lib/binding/Release/node-v57-linux-x64');
+			if($debug)		echo "exec: " .'unzip -j '.$basedir.'/'.$gbzip.' "Gunbot XT Edition - Linux package/node_modules/sqlite3/lib/binding/node-v57-linux-x64/node_sqlite3.node" -d '.$p.'node_modules/sqlite3/lib/binding/node-v57-linux-x64'.PHP_EOL;
+			exec('unzip -o -qq -j '.$basedir.'/'.$gbzip.' "Gunbot XT Edition - Linux package/node_modules/sqlite3/lib/binding/node-v57-linux-x64/node_sqlite3.node" -d '.$p.'node_modules/sqlite3/lib/binding/node-v57-linux-x64');
+			if($debug)		echo "exec: " .'unzip -j '.$basedir.'/'.$gbzip.' "Gunbot XT Edition - Linux package/gunthy-linx64" -d '.$p.PHP_EOL;
+			exec('unzip -o -qq -j '.$basedir.'/'.$gbzip.' "Gunbot XT Edition - Linux package/gunthy-linx64" -d '.$p);
 			//sleep(2);
 
 			//update to 505 beta?
-			if(array_key_exists('gb_ver',$config['servers'][gethostname()])){
+//			if(array_key_exists('gb_ver',$config['servers'][gethostname()])){
 				//pull updated gunbot exe via sftp
-				//again if you need help with this, 505 is NOT for you!
-			//	file_put_contents($p.'/gunthy-linx64',file_get_contents('ssh2.sftp://'.$session.'/data/management/gunbot/gunthy-linx64'));
-			}
+//				file_put_contents($p.'/gunthy-linx64',file_get_contents('ssh2.sftp://'.$session.'/data/management/gunbot/gunthy-linx64'));
+//			}
 
 			if($debug)		echo "chmod +x :" .$p.'gunthy-linx64'.PHP_EOL;
 			exec('chmod +x '.$p.'gunthy-linx64');
@@ -306,6 +314,7 @@ foreach($pairs as $exchange=>$pa){
 				$myconfig['strategies'][$opts['strategy']] = $strategies[$opts['strategy']];
 			}
 			$myconfig['ws']['port'] = $base_ws_port++;
+			$myconfig['ws']['clientport'] = $base_wc_port++;
 
 
 			//write config
@@ -356,7 +365,12 @@ if($delete){
 }
 
 
+
+
+
+
 // Helper Functions
+
 function json_clean_decode($json, $assoc = false, $depth = 512, $options = 0) {
     // search and remove comments like /* */ and //
     $json = preg_replace("#(/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+/)|([\s\t]//.*)|(^//.*)#", '', $json);
@@ -371,4 +385,7 @@ function json_clean_decode($json, $assoc = false, $depth = 512, $options = 0) {
     }
     return $json;
 }
+
+
+
 ?>
