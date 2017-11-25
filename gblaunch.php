@@ -36,8 +36,6 @@ ssh2_auth_pubkey_file($session, 'james', '/root/.ssh/id_rsa.pub', '/root/.ssh/id
 $session = ssh2_sftp($session);
 $file = file_get_contents('ssh2.sftp://'.$session.'/data/management/gunbot/config.js');
 $config = json_clean_decode($file,true);
-*/
-/* Method to pull updates from a local filserver using above ssh keypair.
 if(isset($argv[1]) && ($argv[1] == "su")){
 	//self update cos im lazy
 	file_put_contents($basedir.'/config.js',$file);
@@ -45,11 +43,12 @@ if(isset($argv[1]) && ($argv[1] == "su")){
 	if(!file_exists($basedir.'/'.$gbzip)){
 		file_put_contents($basedir.'/'.$gbzip,file_get_contents('ssh2.sftp://'.$session.'/data/management/gunbot/'.$gbzip));
 	}
-	//update this while we're here
+	//update the rest while we're here  (You can get these from https://github.com/tandyuk/gunbotscripts)
 	file_put_contents($basedir.'/profitcalc.php',file_get_contents('ssh2.sftp://'.$session.'/data/management/gunbot/profitcalc.php'));
+	file_put_contents($basedir.'/bittrex-functions.php',file_get_contents('ssh2.sftp://'.$session.'/data/management/gunbot/bittrex-functions.php'));
+	file_put_contents($basedir.'/bittrex-govenor.php',file_get_contents('ssh2.sftp://'.$session.'/data/management/gunbot/bittrex-govenor.php'));
 	die();
-}
-*/
+}*/
 
 //dont change after here
 $writeconfig = $writepm2 = $unzipgb = $createdirs = $createpm2 = $startbots = $stopbots = $delete = false;
@@ -62,6 +61,11 @@ switch($arg){
 		$writeconfig = true;
 		$writepm2 = true;
 		$startbots = true;
+	break;
+	case "buildonly":
+		$createdirs = true;
+		$writeconfig = true;
+		$writepm2 = true;
 	break;
 	case "start":
 		$startbots = true;
@@ -227,30 +231,21 @@ if(array_key_exists('servers',$config)){
 
 }
 
-//start looping over the pairs
-foreach($pairs as $exchange=>$pa){
-	$e = strtolower(substr($exchange,0,1));
-	foreach($pa as $pair=>$opts){
-		$n = $e.'_'.$pair.'_'.((array_key_exists($opts['strategy'],$strategies) && array_key_exists('REQUIRES',$strategies[$opts['strategy']]))?$strategies[$opts['strategy']]['REQUIRES']:$opts['strategy']);
-		echo "Processing ".$n.PHP_EOL;
-		$p = $basedir.'/gunbot_launcher/'.$n.'/';
-		//make folder structure
-		if($createdirs){
-			if($debug)		echo "mkdir: " .$p.'/tulind/lib/binding/Release/node-v57-linux-x64/'.PHP_EOL;
-			@		mkdir($p.'tulind/lib/binding/Release/node-v57-linux-x64/',0777,true);
-			if($debug)		echo "mkdir: " .$p.'/node_modules/sqlite3/lib/binding/node-v57-linux-x64/'.PHP_EOL;
-			@		mkdir($p.'/node_modules/sqlite3/lib/binding/node-v57-linux-x64/',0777,true);
-			
-			
-		}
+//extract gunbot
+$sourcepath = $basedir.'/gunbot_launcher/source/';
+
 		//extract gunbot files
 		if($unzipgb){
-			if($debug)		echo "exec: " .'unzip -j '.$basedir.'/'.$gbzip.' "Gunbot XT Edition - Linux package/tulind/lib/binding/Release/node-v57-linux-x64/tulind.node" -d '.$p.'tulind/lib/binding/Release/node-v57-linux-x64'.PHP_EOL;
-			exec('unzip -o -qq -j '.$basedir.'/'.$gbzip.' "Gunbot XT Edition - Linux package/tulind/lib/binding/Release/node-v57-linux-x64/tulind.node" -d '.$p.'tulind/lib/binding/Release/node-v57-linux-x64');
-			if($debug)		echo "exec: " .'unzip -j '.$basedir.'/'.$gbzip.' "Gunbot XT Edition - Linux package/node_modules/sqlite3/lib/binding/node-v57-linux-x64/node_sqlite3.node" -d '.$p.'node_modules/sqlite3/lib/binding/node-v57-linux-x64'.PHP_EOL;
-			exec('unzip -o -qq -j '.$basedir.'/'.$gbzip.' "Gunbot XT Edition - Linux package/node_modules/sqlite3/lib/binding/node-v57-linux-x64/node_sqlite3.node" -d '.$p.'node_modules/sqlite3/lib/binding/node-v57-linux-x64');
-			if($debug)		echo "exec: " .'unzip -j '.$basedir.'/'.$gbzip.' "Gunbot XT Edition - Linux package/gunthy-linx64" -d '.$p.PHP_EOL;
-			exec('unzip -o -qq -j '.$basedir.'/'.$gbzip.' "Gunbot XT Edition - Linux package/gunthy-linx64" -d '.$p);
+			if($debug)		echo "mkdir: " .$sourcepath.'/tulind/lib/binding/Release/node-v57-linux-x64/'.PHP_EOL;
+			@		mkdir($sourcepath.'tulind/lib/binding/Release/node-v57-linux-x64/',0777,true);
+			if($debug)		echo "mkdir: " .$sourcepath.'/node_modules/sqlite3/lib/binding/node-v57-linux-x64/'.PHP_EOL;
+			@		mkdir($sourcepath.'/node_modules/sqlite3/lib/binding/node-v57-linux-x64/',0777,true);
+			if($debug)		echo "exec: " .'unzip -j '.$basedir.'/'.$gbzip.' "Gunbot XT Edition - Linux package/tulind/lib/binding/Release/node-v57-linux-x64/tulind.node" -d '.$sourcepath.'tulind/lib/binding/Release/node-v57-linux-x64'.PHP_EOL;
+			exec('unzip -o -qq -j '.$basedir.'/'.$gbzip.' "Gunbot XT Edition - Linux package/tulind/lib/binding/Release/node-v57-linux-x64/tulind.node" -d '.$sourcepath.'tulind/lib/binding/Release/node-v57-linux-x64');
+			if($debug)		echo "exec: " .'unzip -j '.$basedir.'/'.$gbzip.' "Gunbot XT Edition - Linux package/node_modules/sqlite3/lib/binding/node-v57-linux-x64/node_sqlite3.node" -d '.$sourcepath.'node_modules/sqlite3/lib/binding/node-v57-linux-x64'.PHP_EOL;
+			exec('unzip -o -qq -j '.$basedir.'/'.$gbzip.' "Gunbot XT Edition - Linux package/node_modules/sqlite3/lib/binding/node-v57-linux-x64/node_sqlite3.node" -d '.$sourcepath.'node_modules/sqlite3/lib/binding/node-v57-linux-x64');
+			if($debug)		echo "exec: " .'unzip -j '.$basedir.'/'.$gbzip.' "Gunbot XT Edition - Linux package/gunthy-linx64" -d '.$sourcepath.PHP_EOL;
+			exec('unzip -o -qq -j '.$basedir.'/'.$gbzip.' "Gunbot XT Edition - Linux package/gunthy-linx64" -d '.$sourcepath);
 			//sleep(2);
 
 			//update to 505 beta?
@@ -259,12 +254,31 @@ foreach($pairs as $exchange=>$pa){
 //				file_put_contents($p.'/gunthy-linx64',file_get_contents('ssh2.sftp://'.$session.'/data/management/gunbot/gunthy-linx64'));
 //			}
 
-			if($debug)		echo "chmod +x :" .$p.'gunthy-linx64'.PHP_EOL;
-			exec('chmod +x '.$p.'gunthy-linx64');
+			if($debug)		echo "chmod +x :" .$sourcepath.'gunthy-linx64'.PHP_EOL;
+			exec('chmod +x '.$sourcepath.'gunthy-linx64');
 			
 			
 		}
 
+
+
+
+
+//start looping over the pairs
+foreach($pairs as $exchange=>$pa){
+	$e = strtolower(substr($exchange,0,1));
+	foreach($pa as $pair=>$opts){
+		$n = $e.'_'.$pair.'_'.((array_key_exists($opts['strategy'],$strategies) && array_key_exists('REQUIRES',$strategies[$opts['strategy']]))?$strategies[$opts['strategy']]['REQUIRES']:$opts['strategy']);
+		echo "Processing ".$n.PHP_EOL;
+		$p = $basedir.'/gunbot_launcher/'.$n.'/';
+		//make folder structure
+if($createdirs){ mkdir($p,0777,true); }
+//symlinks!
+if($unzipgb){
+symlink($sourcepath.'gunthy-linx64',$p.'gunthy-linx64');
+symlink($sourcepath.'node_modules',$p.'node_modules');
+symlink($sourcepath.'tulind',$p.'tulind');
+}
 		//create config
 		if($writeconfig){
 			$myconfig = $globalsettings;
