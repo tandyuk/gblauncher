@@ -343,7 +343,7 @@ $f = 'module.exports = {
     name   : "'.$n.'",
     cwd: "'.$p .'",
     script: "gunthy-linx64",
-    watch: true,
+    watch: false,
     args: "--color"
   }]
 }';
