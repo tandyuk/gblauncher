@@ -17,7 +17,7 @@ Launch pair with output logged
 CONFIG:
 */
 $debug=false;
-$gbzip = "Gunbot.XT.Edition.-.Linux.package.zip"; //filename of the source .zip
+$gbzip = "Gunbot XT Edition - Linux package.zip"; //filename of the source .zip
 //todo:
 $gb_md5sum = ""; //
 $base_ws_port = 5001; //starting port to use for websockets
@@ -244,6 +244,8 @@ $sourcepath = $basedir.'/gunbot_launcher/source/';
 			exec('unzip -o -qq -j '.$basedir.'/'.$gbzip.' "Gunbot XT Edition - Linux package/tulind/lib/binding/Release/node-v57-linux-x64/tulind.node" -d '.$sourcepath.'tulind/lib/binding/Release/node-v57-linux-x64');
 			if($debug)		echo "exec: " .'unzip -j '.$basedir.'/'.$gbzip.' "Gunbot XT Edition - Linux package/node_modules/sqlite3/lib/binding/node-v57-linux-x64/node_sqlite3.node" -d '.$sourcepath.'node_modules/sqlite3/lib/binding/node-v57-linux-x64'.PHP_EOL;
 			exec('unzip -o -qq -j '.$basedir.'/'.$gbzip.' "Gunbot XT Edition - Linux package/node_modules/sqlite3/lib/binding/node-v57-linux-x64/node_sqlite3.node" -d '.$sourcepath.'node_modules/sqlite3/lib/binding/node-v57-linux-x64');
+			if($debug)		echo "exec: " .'unzip -j '.$basedir.'/'.$gbzip.' "Gunbot XT Edition - Linux package/node-sqlite3.node" -d '.$sourcepath.PHP_EOL;
+			exec('unzip -o -qq -j '.$basedir.'/'.$gbzip.' "Gunbot XT Edition - Linux package/node-sqlite3.node" -d '.$sourcepath);
 			if($debug)		echo "exec: " .'unzip -j '.$basedir.'/'.$gbzip.' "Gunbot XT Edition - Linux package/gunthy-linx64" -d '.$sourcepath.PHP_EOL;
 			exec('unzip -o -qq -j '.$basedir.'/'.$gbzip.' "Gunbot XT Edition - Linux package/gunthy-linx64" -d '.$sourcepath);
 			//sleep(2);
@@ -276,6 +278,7 @@ if($createdirs){ mkdir($p,0777,true); }
 //symlinks!
 if($unzipgb){
 symlink($sourcepath.'gunthy-linx64',$p.'gunthy-linx64');
+symlink($sourcepath.'node_sqlite3.node',$p.'node_sqlite3.node');
 symlink($sourcepath.'node_modules',$p.'node_modules');
 symlink($sourcepath.'tulind',$p.'tulind');
 }
