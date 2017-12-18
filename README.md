@@ -126,7 +126,7 @@ If you like my work, consider buying me a beer or using one of my referral links
 
 BTC: 3A3MHPnHW1A98wBbdNC2JZ19MrVa4dmPdU
 
-Binanace: https://www.binance.com/?ref=11890686
+Binance: https://www.binance.com/?ref=11890686
 
 Cointracking: https://cointracking.info?ref=T995032
 
