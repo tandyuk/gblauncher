@@ -432,7 +432,7 @@ function load_server_settings($config){
 	"symlink_bots" => "user",
 	"validate_config" => true);
 
-	$ds=$ps=$ip=false;
+	$ds=$ps=$is=false;
 	if(array_key_exists('servers',$config) && is_array($config['servers'])){
 		if(array_key_exists('default',$config['servers'])){
 			//load overridden defaults
