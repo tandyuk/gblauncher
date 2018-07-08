@@ -16,7 +16,7 @@ Launch pair with output logged via pm2
 CONFIG:
 */
 $debug=false;
-$gbzip = "Gunbot.XT.Edition.-.Linux.package.zip"; //filename of the source .zip
+$gbzip = "lin.zip"; //filename of the source .zip
 //todo:
 
 $basedir = dirname(__FILE__);
@@ -264,14 +264,14 @@ if($globalsettings['server']['symlink_bots'] == 'user'){
 		@		mkdir($sourcepath.'tulind/lib/binding/Release/node-v57-linux-x64/',0777,true);
 		if($debug)		echo "mkdir: " .$sourcepath.'/node_modules/sqlite3/lib/binding/node-v57-linux-x64/'.PHP_EOL;
 		@		mkdir($sourcepath.'/node_modules/sqlite3/lib/binding/node-v57-linux-x64/',0777,true);
-		if($debug)		echo "exec: " .'unzip -j "'.$basedir.'/'.$gbzip.'" "Gunbot XT Edition - Linux package/tulind/lib/binding/Release/node-v57-linux-x64/tulind.node" -d '.$sourcepath.'tulind/lib/binding/Release/node-v57-linux-x64'.PHP_EOL;
-		exec('unzip -o -qq -j "'.$basedir.'/'.$gbzip.'" "Gunbot XT Edition - Linux package/tulind/lib/binding/Release/node-v57-linux-x64/tulind.node" -d '.$sourcepath.'tulind/lib/binding/Release/node-v57-linux-x64');
-		if($debug)		echo "exec: " .'unzip -j "'.$basedir.'/'.$gbzip.'" "Gunbot XT Edition - Linux package/node_modules/sqlite3/lib/binding/node-v57-linux-x64/node_sqlite3.node" -d '.$sourcepath.'node_modules/sqlite3/lib/binding/node-v57-linux-x64'.PHP_EOL;
-		exec('unzip -o -qq -j "'.$basedir.'/'.$gbzip.'" "Gunbot XT Edition - Linux package/node_modules/sqlite3/lib/binding/node-v57-linux-x64/node_sqlite3.node" -d '.$sourcepath.'node_modules/sqlite3/lib/binding/node-v57-linux-x64');
-		if($debug)		echo "exec: " .'unzip -j "'.$basedir.'/'.$gbzip.'" "Gunbot XT Edition - Linux package/node_sqlite3.node" -d '.$sourcepath.PHP_EOL;
-		exec('unzip -o -qq -j "'.$basedir.'/'.$gbzip.'" "Gunbot XT Edition - Linux package/node_sqlite3.node" -d '.$sourcepath);
-		if($debug)		echo "exec: " .'unzip -j "'.$basedir.'/'.$gbzip.'" "Gunbot XT Edition - Linux package/gunthy-linx64" -d '.$sourcepath.PHP_EOL;
-		exec('unzip -o -qq -j "'.$basedir.'/'.$gbzip.'" "Gunbot XT Edition - Linux package/gunthy-linx64" -d '.$sourcepath);
+		if($debug)		echo "exec: " .'unzip -j "'.$basedir.'/'.$gbzip.'" "lin/tulind/lib/binding/Release/node-v57-linux-x64/tulind.node" -d '.$sourcepath.'tulind/lib/binding/Release/node-v57-linux-x64'.PHP_EOL;
+		exec('unzip -o -qq -j "'.$basedir.'/'.$gbzip.'" "lin/tulind/lib/binding/Release/node-v57-linux-x64/tulind.node" -d '.$sourcepath.'tulind/lib/binding/Release/node-v57-linux-x64');
+		if($debug)		echo "exec: " .'unzip -j "'.$basedir.'/'.$gbzip.'" "lin/node_modules/sqlite3/lib/binding/node-v57-linux-x64/node_sqlite3.node" -d '.$sourcepath.'node_modules/sqlite3/lib/binding/node-v57-linux-x64'.PHP_EOL;
+		exec('unzip -o -qq -j "'.$basedir.'/'.$gbzip.'" "lin/node_modules/sqlite3/lib/binding/node-v57-linux-x64/node_sqlite3.node" -d '.$sourcepath.'node_modules/sqlite3/lib/binding/node-v57-linux-x64');
+		if($debug)		echo "exec: " .'unzip -j "'.$basedir.'/'.$gbzip.'" "lin/node_sqlite3.node" -d '.$sourcepath.PHP_EOL;
+		exec('unzip -o -qq -j "'.$basedir.'/'.$gbzip.'" "lin/node_sqlite3.node" -d '.$sourcepath);
+		if($debug)		echo "exec: " .'unzip -j "'.$basedir.'/'.$gbzip.'" "lin/gunthy-linx64" -d '.$sourcepath.PHP_EOL;
+		exec('unzip -o -qq -j "'.$basedir.'/'.$gbzip.'" "lin/gunthy-linx64" -d '.$sourcepath);
 		//sleep(2);
 		if($debug)		echo "chmod +x :" .$sourcepath.'gunthy-linx64'.PHP_EOL;
 		exec('chmod +x '.$sourcepath.'gunthy-linx64');
@@ -303,14 +303,14 @@ foreach($instances as $instance){
 			@		mkdir($p.'tulind/lib/binding/Release/node-v57-linux-x64/',0777,true);
 			if($debug)		echo "mkdir: " .$p.'/node_modules/sqlite3/lib/binding/node-v57-linux-x64/'.PHP_EOL;
 			@		mkdir($p.'/node_modules/sqlite3/lib/binding/node-v57-linux-x64/',0777,true);
-			if($debug)		echo "exec: " .'unzip -j "'.$basedir.'/'.$gbzip.'" "Gunbot XT Edition - Linux package/tulind/lib/binding/Release/node-v57-linux-x64/tulind.node" -d '.$p.'tulind/lib/binding/Release/node-v57-linux-x64'.PHP_EOL;
-			exec('unzip -o -qq -j "'.$basedir.'/'.$gbzip.'" "Gunbot XT Edition - Linux package/tulind/lib/binding/Release/node-v57-linux-x64/tulind.node" -d '.$p.'tulind/lib/binding/Release/node-v57-linux-x64');
-			if($debug)		echo "exec: " .'unzip -j "'.$basedir.'/'.$gbzip.'" "Gunbot XT Edition - Linux package/node_modules/sqlite3/lib/binding/node-v57-linux-x64/node_sqlite3.node" -d '.$p.'node_modules/sqlite3/lib/binding/node-v57-linux-x64'.PHP_EOL;
-			exec('unzip -o -qq -j "'.$basedir.'/'.$gbzip.'" "Gunbot XT Edition - Linux package/node_modules/sqlite3/lib/binding/node-v57-linux-x64/node_sqlite3.node" -d '.$p.'node_modules/sqlite3/lib/binding/node-v57-linux-x64');
-			if($debug)		echo "exec: " .'unzip -j "'.$basedir.'/'.$gbzip.'" "Gunbot XT Edition - Linux package/node_sqlite3.node" -d '.$p.PHP_EOL;
-			exec('unzip -o -qq -j "'.$basedir.'/'.$gbzip.'" "Gunbot XT Edition - Linux package/node_sqlite3.node" -d '.$p);
-			if($debug)		echo "exec: " .'unzip -j "'.$basedir.'/'.$gbzip.'" "Gunbot XT Edition - Linux package/gunthy-linx64" -d '.$p.PHP_EOL;
-			exec('unzip -o -qq -j "'.$basedir.'/'.$gbzip.'" "Gunbot XT Edition - Linux package/gunthy-linx64" -d '.$p);
+			if($debug)		echo "exec: " .'unzip -j "'.$basedir.'/'.$gbzip.'" "lin/tulind/lib/binding/Release/node-v57-linux-x64/tulind.node" -d '.$p.'tulind/lib/binding/Release/node-v57-linux-x64'.PHP_EOL;
+			exec('unzip -o -qq -j "'.$basedir.'/'.$gbzip.'" "lin/tulind/lib/binding/Release/node-v57-linux-x64/tulind.node" -d '.$p.'tulind/lib/binding/Release/node-v57-linux-x64');
+			if($debug)		echo "exec: " .'unzip -j "'.$basedir.'/'.$gbzip.'" "lin/node_modules/sqlite3/lib/binding/node-v57-linux-x64/node_sqlite3.node" -d '.$p.'node_modules/sqlite3/lib/binding/node-v57-linux-x64'.PHP_EOL;
+			exec('unzip -o -qq -j "'.$basedir.'/'.$gbzip.'" "lin/node_modules/sqlite3/lib/binding/node-v57-linux-x64/node_sqlite3.node" -d '.$p.'node_modules/sqlite3/lib/binding/node-v57-linux-x64');
+			if($debug)		echo "exec: " .'unzip -j "'.$basedir.'/'.$gbzip.'" "lin/node_sqlite3.node" -d '.$p.PHP_EOL;
+			exec('unzip -o -qq -j "'.$basedir.'/'.$gbzip.'" "lin/node_sqlite3.node" -d '.$p);
+			if($debug)		echo "exec: " .'unzip -j "'.$basedir.'/'.$gbzip.'" "lin/gunthy-linx64" -d '.$p.PHP_EOL;
+			exec('unzip -o -qq -j "'.$basedir.'/'.$gbzip.'" "lin/gunthy-linx64" -d '.$p);
 			//sleep(2);
 			if($debug)		echo "chmod +x :" .$p.'gunthy-linx64'.PHP_EOL;
 			exec('chmod +x '.$p.'gunthy-linx64');
