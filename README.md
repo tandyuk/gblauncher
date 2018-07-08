@@ -3,7 +3,8 @@ GUNBOT LAUNCHER
 
 Gunbot launcher is used to deploy and maintain many individual gunbots.
 
-
+Updated for v9.
+For v8 use https://github.com/tandyuk/gblauncher/blob/578e120a9ab93667b15c9d9aeb363f7ca696b200/gblaunch.php
 
 Usage instructions:
 ===
